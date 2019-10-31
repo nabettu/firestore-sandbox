@@ -3,6 +3,7 @@ import "./App.css";
 
 import firebase from "firebase/app";
 import "firebase/firestore";
+import "firebase/remote-config";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBvJUTfvuoyhzV5o-0RBaZswkPv7RDmfUo",
@@ -15,6 +16,16 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
+
+const remoteConfig = firebase.remoteConfig();
+remoteConfig.settings = {
+  minimumFetchIntervalMillis: 100
+};
+
+remoteConfig.fetchAndActivate("test").then(() => {
+  console.log(remoteConfig.getNumber("vertion"));
+  console.log(JSON.parse(remoteConfig.getString("test")));
+});
 
 export default () => {
   const [sampleData, setSampleData] = useState("{}");
@@ -88,7 +99,7 @@ export default () => {
           <h1 className="heading is-md">Array Contains</h1>
           <input
             type="text"
-            class="input"
+            className="input"
             placeholder="A"
             value={inputContains}
             onChange={e => setInputContains(e.target.value)}
@@ -112,7 +123,7 @@ export default () => {
           <h1 className="heading is-md">Array Contain Any</h1>
           <input
             type="text"
-            class="input"
+            className="input"
             placeholder="A,B"
             value={inputContainsAny}
             onChange={e => setInputContainsAny(e.target.value)}
