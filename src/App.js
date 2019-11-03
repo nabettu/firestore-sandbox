@@ -1,31 +1,29 @@
 import React, { useState, useEffect } from "react";
-import "./App.css";
-
 import firebase from "./firebase";
 
 export default () => {
   const [sampleData, setSampleData] = useState("{}");
   const [inputContains, setInputContains] = useState("A");
   const [inputContainsAny, setInputContainsAny] = useState("A,B");
+  const [inputWhereIn, setInputWhereIn] = useState("andC,andB");
   const [resultContains, setResultContains] = useState("");
   const [resultContainsAny, setResultContainsAny] = useState("");
+  const [resultWhereIn, setResultWhereIn] = useState("");
 
   const onArrayContain = async () => {
+    setResultContains("Loading...");
     const hitData = await firebase
       .firestore()
       .collection("test")
       .where("array", "array-contains", inputContains)
       .get()
-      .then(res => {
-        const returnData = [];
-        res.forEach(doc => returnData.push(doc.id));
-        return returnData;
-      });
+      .then(res => res.docs.map(doc => doc.id));
     console.log(hitData);
-    setResultContains(JSON.stringify(hitData));
+    setResultContains(JSON.stringify(hitData, null, 4));
   };
 
   const onArrayContainAny = async () => {
+    setResultContainsAny("Loading...");
     const where = inputContainsAny.split(",");
     console.log("array-contains-any", where);
     const hitData = await firebase
@@ -33,13 +31,23 @@ export default () => {
       .collection("test")
       .where("array", "array-contains-any", where)
       .get()
-      .then(res => {
-        const returnData = [];
-        res.forEach(doc => returnData.push(doc.id));
-        return returnData;
-      });
+      .then(res => res.docs.map(doc => doc.id));
     console.log(hitData);
-    setResultContainsAny(JSON.stringify(hitData));
+    setResultContainsAny(JSON.stringify(hitData, null, 4));
+  };
+
+  const onWhereIn = async () => {
+    setResultWhereIn("Loading...");
+    const where = inputWhereIn.split(",");
+    console.log("in", where);
+    const hitData = await firebase
+      .firestore()
+      .collection("test")
+      .where("name", "in", where)
+      .get()
+      .then(res => res.docs.map(doc => doc.id));
+    console.log(hitData);
+    setResultWhereIn(JSON.stringify(hitData, null, 4));
   };
 
   const fetchSampleData = async () => {
@@ -48,10 +56,8 @@ export default () => {
       .firestore()
       .collection("test")
       .get()
-      .then(res => {
-        res.forEach(doc => (tmpSampleData[doc.id] = doc.data()));
-      });
-    setSampleData(JSON.stringify(tmpSampleData));
+      .then(res => res.docs.map(doc => (tmpSampleData[doc.id] = doc.data())));
+    setSampleData(JSON.stringify(tmpSampleData, null, 2));
   };
 
   useEffect(() => {
@@ -59,69 +65,138 @@ export default () => {
   }, []);
 
   return (
-    <div className="section is-space">
+    <div className="section is-space py-6">
       <div className="inner">
-        <h1 className="heading is-xl is-strong">Firestore Sandbox</h1>
+        <h1 className="heading is-xl is-strong mb-6">Firestore Sandbox</h1>
         <div className="inner">
-          <h1 className="heading is-md is-strong">Sample Data</h1>
-          <code
-            className="code"
-            style={{ display: "block", width: "400px", margin: "1rem" }}
-          >
-            {sampleData}
-          </code>
+          <h1 className="heading is-md is-strong">
+            Sample Data (documentId : documentData)
+          </h1>
+          <pre>
+            <code className="code block overflow-scroll h-64 my-3">
+              {sampleData}
+            </code>
+          </pre>
         </div>
-        <div className="inner">
-          <h1 className="heading is-md">Array Contains</h1>
-          <input
-            type="text"
-            className="input"
-            placeholder="A"
-            value={inputContains}
-            onChange={e => setInputContains(e.target.value)}
-          />
-          <button className="btn is-primary is-plain " onClick={onArrayContain}>
-            Submit
-          </button>
-          {resultContains && (
-            <div>
-              <h1 className="heading is-m">Result</h1>
-              <code
-                className="code"
-                style={{ display: "block", width: "400px", margin: "1rem" }}
-              >
-                {resultContains}
-              </code>
-            </div>
-          )}
+
+        <div className="inner mt-6">
+          <h1 className="heading is-xl is-strong mb-3">Queries</h1>
+          <div className="mb-6">
+            <h1 className="heading is-md is-strong mb-3">Array Contains</h1>
+            <p class="">
+              firebase.firestore().collection("test").where("array",
+              "array-contains", "{inputContains}")
+            </p>
+            <input
+              type="text"
+              className="input my-3"
+              placeholder="A"
+              value={inputContains}
+              onChange={e => setInputContains(e.target.value)}
+            />
+            <button
+              className="btn is-primary is-plain "
+              onClick={onArrayContain}
+            >
+              Submit
+            </button>
+            {resultContains && (
+              <div>
+                <h3 className="heading is-sm is-strong mb-3">
+                  Array Contains's Result (documentIds)
+                </h3>
+                <code className="code block mb-3">{resultContains}</code>
+              </div>
+            )}
+          </div>
+
+          <div className="mb-6">
+            <h1 className="heading is-md is-strong mb-3">Array Contain Any</h1>
+            <p>
+              firebase.firestore().collection("test").where("array",
+              "array-contains-any", [
+              {inputContainsAny
+                .split(",")
+                .map(t => `"${t}"`)
+                .join(",")}
+              ])
+            </p>
+            <input
+              type="text"
+              className="input my-3"
+              placeholder="A,B"
+              value={inputContainsAny}
+              onChange={e => setInputContainsAny(e.target.value)}
+            />
+            <button
+              className="btn is-primary is-plain "
+              onClick={onArrayContainAny}
+            >
+              Submit
+            </button>
+            {resultContainsAny && (
+              <div>
+                <h3 className="heading is-sm is-strong mb-3">
+                  Array Contain Any's Result (documentIds)
+                </h3>
+                <code className="code block mb-3">{resultContainsAny}</code>
+              </div>
+            )}
+          </div>
+          <div className="mb-6">
+            <h1 className="heading is-md is-strong mb-3">WhereIn</h1>
+            <p>
+              firebase.firestore().collection("test").where("name", "in", [
+              {inputWhereIn
+                .split(",")
+                .map(t => `"${t}"`)
+                .join(",")}
+              ])
+            </p>
+            <input
+              type="text"
+              className="input my-3"
+              placeholder="A,B"
+              value={inputWhereIn}
+              onChange={e => setInputWhereIn(e.target.value)}
+            />
+            <button className="btn is-primary is-plain " onClick={onWhereIn}>
+              Submit
+            </button>
+            {resultWhereIn && (
+              <div>
+                <h3 className="heading is-sm is-strong mb-3">
+                  WhereIn's Result (documentIds)
+                </h3>
+                <code className="code block mb-3">{resultWhereIn}</code>
+              </div>
+            )}
+          </div>
         </div>
-        <div>
-          <h1 className="heading is-md">Array Contain Any</h1>
-          <input
-            type="text"
-            className="input"
-            placeholder="A,B"
-            value={inputContainsAny}
-            onChange={e => setInputContainsAny(e.target.value)}
-          />
-          <button
-            className="btn is-primary is-plain "
-            onClick={onArrayContainAny}
-          >
-            Submit
-          </button>
-          {resultContainsAny && (
-            <div>
-              <h1 className="heading is-m">Result</h1>
-              <code
-                className="code"
-                style={{ display: "block", width: "400px", margin: "1rem" }}
-              >
-                {resultContainsAny}
-              </code>
-            </div>
-          )}
-        </div>
+        <footer>
+          <p>
+            Maker is{" "}
+            <a
+              className="text is-link is-primary"
+              href="https://twitter.com/nabettu"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              @nabettu
+            </a>
+          </p>
+          <p className="texts">
+            <a
+              className="text is-link is-primary"
+              href="https://github.com/nabettu/firestore-sandbox"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Repository
+            </a>{" "}
+            on GitHub.
+          </p>
+        </footer>
       </div>
     </div>
   );
