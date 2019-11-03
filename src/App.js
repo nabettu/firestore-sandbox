@@ -3,19 +3,18 @@ import firebase from "./firebase";
 
 export default () => {
   const [sampleData, setSampleData] = useState("{}");
-  const [inputContains, setInputContains] = useState("A");
-  const [inputContainsAny, setInputContainsAny] = useState("A,B");
-  const [inputWhereIn, setInputWhereIn] = useState("andC,andB");
+  const [inputContains, setInputContains] = useState("game");
+  const [inputContainsAny, setInputContainsAny] = useState("game,tech");
+  const [inputWhereIn, setInputWhereIn] = useState("tweet,podcast");
   const [resultContains, setResultContains] = useState("");
   const [resultContainsAny, setResultContainsAny] = useState("");
   const [resultWhereIn, setResultWhereIn] = useState("");
+  const collectionRef = firebase.firestore().collection("blogs");
 
   const onArrayContain = async () => {
     setResultContains("Loading...");
-    const hitData = await firebase
-      .firestore()
-      .collection("test")
-      .where("array", "array-contains", inputContains)
+    const hitData = await collectionRef
+      .where("tags", "array-contains", inputContains)
       .get()
       .then(res => res.docs.map(doc => doc.id));
     console.log(hitData);
@@ -26,10 +25,8 @@ export default () => {
     setResultContainsAny("Loading...");
     const where = inputContainsAny.split(",");
     console.log("array-contains-any", where);
-    const hitData = await firebase
-      .firestore()
-      .collection("test")
-      .where("array", "array-contains-any", where)
+    const hitData = await collectionRef
+      .where("tags", "array-contains-any", where)
       .get()
       .then(res => res.docs.map(doc => doc.id));
     console.log(hitData);
@@ -40,10 +37,8 @@ export default () => {
     setResultWhereIn("Loading...");
     const where = inputWhereIn.split(",");
     console.log("in", where);
-    const hitData = await firebase
-      .firestore()
-      .collection("test")
-      .where("name", "in", where)
+    const hitData = await collectionRef
+      .where("type", "in", where)
       .get()
       .then(res => res.docs.map(doc => doc.id));
     console.log(hitData);
@@ -52,9 +47,7 @@ export default () => {
 
   const fetchSampleData = async () => {
     const tmpSampleData = {};
-    await firebase
-      .firestore()
-      .collection("test")
+    await collectionRef
       .get()
       .then(res => res.docs.map(doc => (tmpSampleData[doc.id] = doc.data())));
     setSampleData(JSON.stringify(tmpSampleData, null, 2));
@@ -62,7 +55,7 @@ export default () => {
 
   useEffect(() => {
     fetchSampleData();
-  }, []);
+  });
 
   return (
     <div className="section is-space py-6">
@@ -83,8 +76,8 @@ export default () => {
           <h1 className="heading is-xl is-strong mb-3">Queries</h1>
           <div className="mb-6">
             <h1 className="heading is-md is-strong mb-3">Array Contains</h1>
-            <p class="">
-              firebase.firestore().collection("test").where("array",
+            <p>
+              firebase.firestore().collection("blogs").where("tags",
               "array-contains", "{inputContains}")
             </p>
             <input
@@ -113,7 +106,7 @@ export default () => {
           <div className="mb-6">
             <h1 className="heading is-md is-strong mb-3">Array Contain Any</h1>
             <p>
-              firebase.firestore().collection("test").where("array",
+              firebase.firestore().collection("blogs").where("tags",
               "array-contains-any", [
               {inputContainsAny
                 .split(",")
@@ -146,7 +139,7 @@ export default () => {
           <div className="mb-6">
             <h1 className="heading is-md is-strong mb-3">WhereIn</h1>
             <p>
-              firebase.firestore().collection("test").where("name", "in", [
+              firebase.firestore().collection("blogs").where("type", "in", [
               {inputWhereIn
                 .split(",")
                 .map(t => `"${t}"`)
